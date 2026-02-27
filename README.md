@@ -206,6 +206,52 @@ These are typically pulled from the systemd unit file:
 | GET | `/api/instances/:name/backups` | List backups |
 | POST | `/api/instances/:name/backups/:filename/restore` | Restore backup |
 
+## RCON
+
+The Factorio daemon includes built-in RCON support for interacting with running Factorio servers.
+
+### Automatic RCON Setup
+
+RCON is automatically enabled for all instances. When an instance starts for the first time:
+
+- A random port is assigned for RCON communication
+- A random password is generated for authentication
+- Credentials are stored in the instance directory:
+  - `rcon-port` - Contains the RCON port number
+  - `rcon-passwd` - Contains the RCON password
+
+These credentials persist across server restarts, so you only need to retrieve them once.
+
+### Security Notes
+
+- RCON binds to `127.0.0.1` only, meaning it's only accessible from the local machine
+- For remote access, set up an SSH tunnel or use a reverse proxy
+- RCON is only available when the Factorio server is running
+
+### Webapp RCON Features
+
+The webapp provides a convenient RCON interface through the instance modal:
+
+1. **Access RCON**: Click on an instance card, then navigate to the **RCON** tab in the modal
+
+2. **Server Time**: Displays the current in-game time on the server
+
+3. **Player List**: Shows all currently connected players with their names and online status
+
+4. **Add Admin**: Add new administrators to the server using their Factorio username
+
+### Retrieving RCON Credentials
+
+To get the RCON credentials for scripting or external tools:
+
+```bash
+# Read the RCON port
+cat /opt/factorio/{instance}/rcon-port
+
+# Read the RCON password
+cat /opt/factorio/{instance}/rcon-passwd
+```
+
 ## License
 
 AGPL v3 License - See LICENSE.txt file for details

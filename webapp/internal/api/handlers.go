@@ -10,6 +10,7 @@ import (
 	"github.com/draxxris/factorio-webapp/internal/filemgr"
 	"github.com/draxxris/factorio-webapp/internal/instance"
 	"github.com/draxxris/factorio-webapp/internal/logstream"
+	"github.com/draxxris/factorio-webapp/internal/rcon"
 	"github.com/draxxris/factorio-webapp/internal/service"
 )
 
@@ -19,15 +20,17 @@ type Handlers struct {
 	services  *service.Controller
 	files     *filemgr.Manager
 	logs      *logstream.Streamer
+	baseDir   string
 }
 
 // NewHandlers creates a new Handlers instance
-func NewHandlers(instances *instance.Manager, services *service.Controller, files *filemgr.Manager, logs *logstream.Streamer) *Handlers {
+func NewHandlers(instances *instance.Manager, services *service.Controller, files *filemgr.Manager, logs *logstream.Streamer, baseDir string) *Handlers {
 	return &Handlers{
 		instances: instances,
 		services:  services,
 		files:     files,
 		logs:      logs,
+		baseDir:   baseDir,
 	}
 }
 
@@ -428,4 +431,89 @@ func (h *Handlers) RestoreBackup(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "backup restored"})
+}
+
+// GetServerTime returns the server time via RCON
+func (h *Handlers) GetServerTime(c *gin.Context) {
+	name := c.Param("name")
+
+	if _, err := h.instances.GetInstance(name); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "instance not found"})
+		return
+	}
+
+	client, err := rcon.NewClient(h.baseDir, name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer client.Close()
+
+	time, err := client.GetServerTime()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"time": time})
+}
+
+// GetPlayerList returns the list of online players via RCON
+func (h *Handlers) GetPlayerList(c *gin.Context) {
+	name := c.Param("name")
+
+	if _, err := h.instances.GetInstance(name); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "instance not found"})
+		return
+	}
+
+	client, err := rcon.NewClient(h.baseDir, name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer client.Close()
+
+	players, err := client.GetPlayerList()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"players": players})
+}
+
+// AddAdminRequest is the request body for adding an admin
+type AddAdminRequest struct {
+	Player string `json:"player" binding:"required"`
+}
+
+// AddAdmin adds a player as admin via RCON
+func (h *Handlers) AddAdmin(c *gin.Context) {
+	name := c.Param("name")
+
+	if _, err := h.instances.GetInstance(name); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "instance not found"})
+		return
+	}
+
+	var req AddAdminRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	client, err := rcon.NewClient(h.baseDir, name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer client.Close()
+
+	if err := client.AddAdmin(req.Player); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "admin added", "player": req.Player})
 }

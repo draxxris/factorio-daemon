@@ -28,7 +28,7 @@ func main() {
 	serviceCtrl := service.NewController()
 	fileMgr := filemgr.NewManager(cfg.Factorio.BaseDir, cfg.Factorio.StagingDir, cfg.Factorio.BackupDir)
 	logStreamer := logstream.NewStreamer(cfg.Logs.PollInterval, cfg.Logs.MaxLines)
-	handlers := api.NewHandlers(instanceMgr, serviceCtrl, fileMgr, logStreamer)
+	handlers := api.NewHandlers(instanceMgr, serviceCtrl, fileMgr, logStreamer, cfg.Factorio.BaseDir)
 
 	// Setup Gin router
 	gin.SetMode(gin.ReleaseMode)
@@ -66,6 +66,11 @@ func main() {
 		apiGroup.POST("/instances/:name/backup", handlers.BackupSave)
 		apiGroup.GET("/instances/:name/backups", handlers.ListBackups)
 		apiGroup.POST("/instances/:name/backups/:filename/restore", handlers.RestoreBackup)
+
+		// RCON management
+		apiGroup.GET("/instances/:name/rcon/time", handlers.GetServerTime)
+		apiGroup.GET("/instances/:name/rcon/players", handlers.GetPlayerList)
+		apiGroup.POST("/instances/:name/rcon/admin", handlers.AddAdmin)
 	}
 
 	// Serve static files

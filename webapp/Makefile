@@ -47,8 +47,7 @@ deps:
 # Developer tasks
 ## Deploy to remote server via SCP
 deploy: build
-	scp $(BUILD_DIR)/$(BINARY_NAME) $(REMOTE_HOST):$(REMOTE_PATH)
-	scp -r cmd/server/static $(REMOTE_HOST):$(REMOTE_PATH)
+	scp $(BUILD_DIR)/$(BINARY_NAME) $(REMOTE_HOST):$(REMOTE_PATH)/webapp/
 ## Run locally for testing
 run: build
 	./$(BINARY_NAME)

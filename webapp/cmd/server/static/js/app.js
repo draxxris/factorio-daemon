@@ -9,11 +9,37 @@ const instanceModal = document.getElementById('instance-modal');
 const newInstanceModal = document.getElementById('new-instance-modal');
 const newInstanceBtn = document.getElementById('new-instance-btn');
 
-// API Functions
+// API Functions with timeout
+async function fetchWithTimeout(url, options = {}, timeout = 10000) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timeoutId);
+        return response;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            throw new Error('Request timed out');
+        }
+        throw error;
+    }
+}
+
 async function apiGet(url) {
-    const response = await fetch(url);
+    const response = await fetchWithTimeout(url);
     if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
+        let errorMessage = `API error: ${response.statusText}`;
+        try {
+            const errorData = await response.json();
+            if (errorData.error) {
+                errorMessage = errorData.error;
+            }
+        } catch (e) {
+            // If we can't parse JSON, use the status text
+        }
+        throw new Error(errorMessage);
     }
     return response.json();
 }
@@ -26,18 +52,35 @@ async function apiPost(url, data = null) {
         options.headers = { 'Content-Type': 'application/json' };
         options.body = JSON.stringify(data);
     }
-    const response = await fetch(url, options);
+    const response = await fetchWithTimeout(url, options);
     if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || response.statusText);
+        let errorMessage = response.statusText;
+        try {
+            const error = await response.json();
+            if (error.error) {
+                errorMessage = error.error;
+            }
+        } catch (e) {
+            // If we can't parse JSON, use the status text
+        }
+        throw new Error(errorMessage);
     }
     return response.json();
 }
 
 async function apiDelete(url) {
-    const response = await fetch(url, { method: 'DELETE' });
+    const response = await fetchWithTimeout(url, { method: 'DELETE' });
     if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
+        let errorMessage = `API error: ${response.statusText}`;
+        try {
+            const error = await response.json();
+            if (error.error) {
+                errorMessage = error.error;
+            }
+        } catch (e) {
+            // If we can't parse JSON, use the status text
+        }
+        throw new Error(errorMessage);
     }
     return response.json();
 }
@@ -153,6 +196,81 @@ function switchTab(tabName) {
     
     if (tabName === 'logs') {
         loadLogs();
+    } else if (tabName === 'rcon') {
+        loadRconData();
+    }
+}
+
+// Load RCON data (server time and player list)
+async function loadRconData() {
+    const serverTimeEl = document.getElementById('server-time');
+    const playerListEl = document.getElementById('player-list');
+    
+    // Show loading state
+    serverTimeEl.innerHTML = '<p class="loading-hint">Loading...</p>';
+    playerListEl.innerHTML = '<p class="loading-hint">Loading...</p>';
+    
+    try {
+        // Fetch server time
+        const timeData = await apiGet(`/api/instances/${currentInstance.name}/rcon/time`);
+        serverTimeEl.innerHTML = `<p class="time-display">${escapeHtml(timeData.time)}</p>`;
+    } catch (error) {
+        serverTimeEl.innerHTML = `<p class="error-hint">Failed to load server time: ${escapeHtml(error.message)}</p>`;
+    }
+    
+    try {
+        // Fetch player list
+        const playersData = await apiGet(`/api/instances/${currentInstance.name}/rcon/players`);
+        
+        if (!playersData.players || playersData.players.length === 0) {
+            playerListEl.innerHTML = '<p class="empty-hint">No players online</p>';
+        } else {
+            playerListEl.innerHTML = `
+                <table class="player-table">
+                    <thead>
+                        <tr>
+                            <th>Player Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${playersData.players.map(player => `
+                            <tr>
+                                <td>${escapeHtml(player)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+    } catch (error) {
+        playerListEl.innerHTML = `<p class="error-hint">Failed to load players: ${escapeHtml(error.message)}</p>`;
+    }
+}
+
+// Add admin
+async function addAdmin(playerName) {
+    const messageEl = document.getElementById('admin-message');
+    
+    try {
+        await apiPost(`/api/instances/${currentInstance.name}/rcon/admin`, { player: playerName });
+        messageEl.textContent = `Successfully added ${playerName} as admin!`;
+        messageEl.className = 'message success';
+        messageEl.classList.remove('hidden');
+        
+        // Refresh player list
+        await loadRconData();
+        
+        // Clear input
+        document.getElementById('admin-player-name').value = '';
+        
+        // Hide message after 3 seconds
+        setTimeout(() => {
+            messageEl.classList.add('hidden');
+        }, 3000);
+    } catch (error) {
+        messageEl.textContent = `Failed to add admin: ${escapeHtml(error.message)}`;
+        messageEl.className = 'message error';
+        messageEl.classList.remove('hidden');
     }
 }
 
@@ -359,6 +477,12 @@ async function refreshCurrentInstance() {
         currentInstance = await apiGet(`/api/instances/${currentInstance.name}`);
         updateStatusDisplay();
         await loadInstances();
+        
+        // Also refresh RCON data if RCON tab is active
+        const rconTab = document.getElementById('tab-rcon');
+        if (rconTab && rconTab.classList.contains('active')) {
+            await loadRconData();
+        }
     } catch (error) {
         console.error('Failed to refresh:', error);
     }
@@ -528,6 +652,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Backup
     document.getElementById('btn-backup').addEventListener('click', backupSave);
+    
+    // RCON
+    document.getElementById('btn-refresh-rcon').addEventListener('click', loadRconData);
+    document.getElementById('add-admin-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const playerName = document.getElementById('admin-player-name').value.trim();
+        if (playerName) {
+            await addAdmin(playerName);
+        }
+    });
     
     // New instance form
     document.getElementById('new-instance-form').addEventListener('submit', createInstance);

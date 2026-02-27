@@ -40,12 +40,10 @@ install:
 
 # Deploy to remote server via SCP
 deploy:
-	@echo "Deploying launcher to $(REMOTE_HOST):$(REMOTE_PATH)..."
-	scp $(SCRIPTS) $(REMOTE_HOST):$(REMOTE_PATH)/
-	scp -r templates $(REMOTE_HOST):$(REMOTE_PATH)/
-	scp $(EXAMPLE_ENV) $(REMOTE_HOST):$(REMOTE_PATH)/
-	scp env-* $(REMOTE_HOST):$(REMOTE_PATH)/
-	scp factorio@.service $(REMOTE_HOST):$(REMOTE_PATH)/
+	ssh $(REMOTE_HOST) mkdir -p $(REMOTE_PATH)/launcher
+	scp $(SCRIPTS) factorio@.service $(REMOTE_HOST):$(REMOTE_PATH)/launcher
+	scp -r templates $(REMOTE_HOST):$(REMOTE_PATH)/launcher
+	scp env-* $(EXAMPLE_ENV) $(REMOTE_HOST):$(REMOTE_PATH)/
 	@echo "Deployment complete!"
 
 clean:

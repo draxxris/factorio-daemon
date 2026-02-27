@@ -45,6 +45,10 @@ func (m *Manager) ListInstances() ([]Instance, error) {
 		}
 		name := entry.Name()
 		if strings.HasPrefix(name, "env-") {
+			// Skip env-example as it's a sample file
+			if name == "env-example" {
+				continue
+			}
 			instanceName := strings.TrimPrefix(name, "env-")
 			instance, err := m.GetInstance(instanceName)
 			if err != nil {

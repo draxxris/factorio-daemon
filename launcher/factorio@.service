@@ -6,7 +6,7 @@ WorkingDirectory=/opt/factorio
 Type=simple
 SyslogIdentifier=factorio-%i
 KillSignal=SIGINT
-ExecStart=/opt/factorio/factorio.sh env-%i
+ExecStart=/opt/factorio/launcher/factorio.sh env-%i
 
 RestartSec=10
 Restart=on-failure

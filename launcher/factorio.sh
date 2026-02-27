@@ -48,11 +48,9 @@ if [ -z "$TITLE" ]; then
     TITLE="Factorio Server"
 fi
 
-# Get the directory where the script is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 # Set up the working directory (NAME is a subdirectory relative to script location)
-WORK_DIR="$SCRIPT_DIR/$NAME"
+WORK_DIR="$(pwd)/$NAME"
+TEMPLATE_DIR="$(pwd)/launcher/templates"
 
 if [ "$VERSION" = "latest" ]; then
     # For latest, we need to fetch the actual version number
@@ -169,8 +167,8 @@ fi
 echo "Configuring server settings..."
 
 # Find the server-settings.json in templates/ directory
-if [ -f "$SCRIPT_DIR/templates/server-settings.json" ]; then
-    SETTINGS_SOURCE="$SCRIPT_DIR/templates/server-settings.json"
+if [ -f "$TEMPLATE_DIR/server-settings.json" ]; then
+    SETTINGS_SOURCE="$TEMPLATE_DIR/server-settings.json"
 else
     echo "Warning: templates/server-settings.json not found, using Factorio defaults"
     SETTINGS_SOURCE=""
@@ -212,10 +210,43 @@ echo "================================="
 
 cd $WORK_DIR
 
+# RCON Setup
+# Generate or load RCON credentials
+RCON_PORT_FILE="rcon-port"
+RCON_PASSWD_FILE="rcon-passwd"
+
+# Function to generate random alphanumeric string (16+ characters)
+generate_random_password() {
+    local length=${1:-16}
+    tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$length"
+}
+
+# Function to generate random port between 20000-30000
+generate_random_port() {
+    echo $((20000 + RANDOM % 10001))
+}
+
+# Load or generate RCON credentials
+if [ -f "$RCON_PORT_FILE" ] && [ -f "$RCON_PASSWD_FILE" ]; then
+    echo "Loading existing RCON credentials..."
+    RCON_PORT=$(cat "$RCON_PORT_FILE")
+    RCON_PASSWORD=$(cat "$RCON_PASSWD_FILE")
+else
+    echo "Generating new RCON credentials..."
+    RCON_PORT=$(generate_random_port)
+    RCON_PASSWORD=$(generate_random_password 16)
+    echo "$RCON_PORT" > "$RCON_PORT_FILE"
+    echo "$RCON_PASSWORD" > "$RCON_PASSWD_FILE"
+    chmod 600 "$RCON_PORT_FILE" "$RCON_PASSWD_FILE"
+fi
+
+echo "RCON Port: $RCON_PORT"
+echo "RCON Password: (stored in $RCON_PASSWD_FILE)"
+
 mkdir -p config
 echo "Setting PORT=$PORT"
 sed -e "s/PORT_REPLACE/$PORT/" \
-    ../templates/config.ini > config/config.ini
+    $TEMPLATE_DIR/config.ini > config/config.ini
 
 if [ -f mod-list.json ]; then
     echo "mod-list.json found, executing python mod downloader script"
@@ -239,4 +270,6 @@ fi
 exec "$WORK_DIR/bin/x64/factorio" \
     --start-server "$SAVE_FILE" \
     --server-settings data/server-settings.json \
+    --rcon-bind "127.0.0.1:$RCON_PORT" \
+    --rcon-password "$RCON_PASSWORD" \
     "$@"
