@@ -11,7 +11,14 @@ SCRIPTS=factorio.sh download_mods.py
 TEMPLATES=templates/server-settings.json templates/config.ini
 EXAMPLE_ENV=env-example
 
-.PHONY: install clean deploy
+# Mod downloader tool
+MODDOWNLOADER_DIR=../moddownloader
+
+.PHONY: install clean deploy moddownloader test
+
+# Build moddownloader
+moddownloader:
+	$(MAKE) -C $(MODDOWNLOADER_DIR) build
 
 # Install the launcher
 install:
@@ -39,7 +46,7 @@ install:
 	@echo "   sudo systemctl enable factorio@myserver"
 
 # Deploy to remote server via SCP
-deploy:
+deploy: moddownloader
 	ssh $(REMOTE_HOST) mkdir -p $(REMOTE_PATH)/launcher
 	scp $(SCRIPTS) factorio@.service $(REMOTE_HOST):$(REMOTE_PATH)/launcher
 	scp -r templates $(REMOTE_HOST):$(REMOTE_PATH)/launcher
@@ -48,3 +55,11 @@ deploy:
 
 clean:
 	@echo "Nothing to clean in launcher directory"
+	$(MAKE) -C $(MODDOWNLOADER_DIR) clean
+
+# Run tests (shellcheck for scripts)
+test:
+	@echo "Running shellcheck on scripts..."
+	@command -v shellcheck >/dev/null 2>&1 || { echo "Error: shellcheck not installed. Install with: apt-get install shellcheck"; exit 1; }
+	@shellcheck factorio.sh && echo "✓ shellcheck passed" || { echo "✗ shellcheck failed"; exit 1; }
+	@echo "All tests passed!"
