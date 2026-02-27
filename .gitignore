@@ -1,0 +1,6 @@
+.env
+.envrc
+plans/
+build/
+launcher/env-*
+!launcher/env-example

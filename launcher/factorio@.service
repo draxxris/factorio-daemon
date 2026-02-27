@@ -1,0 +1,15 @@
+[Unit]
+Description=Factorio Server %i
+
+[Service]
+WorkingDirectory=/opt/factorio
+Type=simple
+SyslogIdentifier=factorio-%i
+KillSignal=SIGINT
+ExecStart=/opt/factorio/factorio.sh env-%i
+
+RestartSec=10
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

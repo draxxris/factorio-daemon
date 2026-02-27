@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factorio Server Manager</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Factorio Server Manager</h1>
+            <button id="new-instance-btn" class="btn btn-primary">+ New Instance</button>
+        </header>
+        
+        <main>
+            <!-- Instance List -->
+            <section id="instance-list" class="card-grid">
+                <!-- Populated by JS -->
+            </section>
+            
+            <!-- Instance Detail Modal -->
+            <div id="instance-modal" class="modal hidden">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2 id="modal-title">Instance Name</h2>
+                        <button class="close-btn">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Status -->
+                        <div class="status-bar">
+                            <span id="status-indicator" class="status-dot"></span>
+                            <span id="status-text">Stopped</span>
+                            <span id="autostart-badge" class="badge">Autostart</span>
+                        </div>
+                        
+                        <!-- Service Controls -->
+                        <div class="control-bar">
+                            <button id="btn-start" class="btn btn-success">Start</button>
+                            <button id="btn-stop" class="btn btn-danger">Stop</button>
+                            <button id="btn-restart" class="btn btn-warning">Restart</button>
+                            <button id="btn-enable" class="btn btn-secondary">Enable Autostart</button>
+                            <button id="btn-disable" class="btn btn-secondary">Disable Autostart</button>
+                        </div>
+                        
+                        <!-- Tabs -->
+                        <div class="tabs">
+                            <button class="tab-btn active" data-tab="files">Files</button>
+                            <button class="tab-btn" data-tab="logs">Logs</button>
+                            <button class="tab-btn" data-tab="backups">Backups</button>
+                        </div>
+                        
+                        <!-- Files Tab -->
+                        <div id="tab-files" class="tab-content active">
+                            <h3>Upload Files</h3>
+                            <div id="drop-zone" class="drop-zone">
+                                <p>Drag & drop files here or click to upload</p>
+                                <p class="hint">Accepted: mod-list.json, mod-settings.dat, .zip (save files)</p>
+                                <input type="file" id="file-input" multiple hidden>
+                            </div>
+                            
+                            <h3>Staged Files</h3>
+                            <div id="staged-files" class="file-list">
+                                <p class="empty-hint">No files staged</p>
+                            </div>
+                            
+                            <div class="action-bar">
+                                <button id="btn-clear-staged" class="btn btn-secondary">Clear Staged</button>
+                                <button id="btn-deploy" class="btn btn-primary">Deploy Files</button>
+                            </div>
+                            <p id="deploy-warning" class="warning hidden">Instance must be stopped before deploying!</p>
+                        </div>
+                        
+                        <!-- Logs Tab -->
+                        <div id="tab-logs" class="tab-content">
+                            <div class="log-controls">
+                                <button id="btn-refresh-logs" class="btn btn-secondary">Refresh</button>
+                                <button id="btn-stream-logs" class="btn btn-secondary">Stream Logs</button>
+                                <label><input type="checkbox" id="auto-scroll" checked> Auto-scroll</label>
+                            </div>
+                            <div id="log-viewer" class="log-viewer">
+                                <!-- Logs populated here -->
+                            </div>
+                        </div>
+                        
+                        <!-- Backups Tab -->
+                        <div id="tab-backups" class="tab-content">
+                            <div class="action-bar">
+                                <button id="btn-backup" class="btn btn-primary">Backup Save Now</button>
+                            </div>
+                            <h3>Backup History</h3>
+                            <div id="backup-list" class="backup-list">
+                                <p class="empty-hint">No backups</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- New Instance Modal -->
+            <div id="new-instance-modal" class="modal hidden">
+                <div class="modal-content modal-small">
+                    <div class="modal-header">
+                        <h2>Create New Instance</h2>
+                        <button class="close-btn">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="new-instance-form">
+                            <div class="form-group">
+                                <label for="new-name">Instance Name *</label>
+                                <input type="text" id="new-name" name="name" required pattern="[a-zA-Z0-9-]+" placeholder="my-server">
+                            </div>
+                            <div class="form-group">
+                                <label for="new-version">Factorio Version</label>
+                                <input type="text" id="new-version" name="version" value="latest" placeholder="latest">
+                            </div>
+                            <div class="form-group">
+                                <label for="new-title">Server Title</label>
+                                <input type="text" id="new-title" name="title" placeholder="My Factorio Server">
+                            </div>
+                            <div class="form-group">
+                                <label for="new-description">Description</label>
+                                <textarea id="new-description" name="description" rows="2" placeholder="Server description"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="new-port">Port</label>
+                                <input type="number" id="new-port" name="port" value="34197" min="1" max="65535">
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="new-non-blocking" name="non_blocking_save" checked>
+                                    Non-blocking Save
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="new-enable-now" checked>
+                                    Enable and start immediately
+                                </label>
+                            </div>
+                            <div class="action-bar">
+                                <button type="button" class="btn btn-secondary close-modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Create Instance</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

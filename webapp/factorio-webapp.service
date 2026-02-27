@@ -1,0 +1,20 @@
+[Unit]
+Description=Factorio Server Manager Webapp
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/factorio/webapp
+ExecStart=/opt/factorio/webapp/factorio-webapp
+Restart=on-failure
+RestartSec=5
+
+# Environment variables (optional - defaults are usually fine)
+# Environment=SERVER_PORT=8080
+# Environment=SERVER_HOST=0.0.0.0
+# Environment=FACTORIO_BASE_DIR=/opt/factorio
+# Environment=STAGING_DIR=/opt/factorio/webapp/data/staging
+# Environment=BACKUP_DIR=/opt/factorio/webapp/data/backups
+
+[Install]
+WantedBy=multi-user.target

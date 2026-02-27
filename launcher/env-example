@@ -1,0 +1,6 @@
+NAME=example
+VERSION=latest
+TITLE="[quality=rare] Space Age for all"
+DESCRIPTION="[color=1,0,0]Space Age[/color] for everybody :)"
+PORT=34197
+NON_BLOCKING_SAVE=true
