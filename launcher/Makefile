@@ -7,7 +7,7 @@ SERVICE_FILE=/etc/systemd/system/factorio@.service
 #REMOTE_PATH=/opt/factorio/
 
 # Files to install
-SCRIPTS=factorio.sh download_mods.py
+SCRIPTS=factorio.sh
 TEMPLATES=templates/server-settings.json templates/config.ini
 EXAMPLE_ENV=env-example
 
@@ -21,11 +21,12 @@ moddownloader:
 	$(MAKE) -C $(MODDOWNLOADER_DIR) build
 
 # Install the launcher
-install:
+install: moddownloader
 	@echo "Installing factorio launcher to $(PREFIX)..."
 	install -d $(PREFIX)
 	install -d $(PREFIX)/templates
 	install -m 755 $(SCRIPTS) $(PREFIX)/
+	install -m 755 ../build/moddownloader $(PREFIX)/
 	install -m 644 $(TEMPLATES) $(PREFIX)/templates/
 	install -m 644 $(EXAMPLE_ENV) $(PREFIX)/
 	install -m 644 factorio@.service $(SERVICE_FILE)
@@ -49,8 +50,9 @@ install:
 deploy: moddownloader
 	ssh $(REMOTE_HOST) mkdir -p $(REMOTE_PATH)/launcher
 	scp $(SCRIPTS) factorio@.service $(REMOTE_HOST):$(REMOTE_PATH)/launcher
+	scp ../build/moddownloader $(REMOTE_HOST):$(REMOTE_PATH)/launcher
 	scp -r templates $(REMOTE_HOST):$(REMOTE_PATH)/launcher
-	scp env-* $(EXAMPLE_ENV) $(REMOTE_HOST):$(REMOTE_PATH)/
+	scp env-* $(REMOTE_HOST):$(REMOTE_PATH)/
 	@echo "Deployment complete!"
 
 clean:

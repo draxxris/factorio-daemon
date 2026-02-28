@@ -32,9 +32,9 @@ fi
 
 # Source the env files
 # shellcheck source=/dev/null
-source "$ROOT_DIR/$ENV_FILE"
+source "$ENV_FILE"
 # shellcheck source=/dev/null
-source "$ROOT_DIR/$CREDS_FILE"
+source "$CREDS_FILE"
 
 # Validate required variables
 if [ -z "$NAME" ]; then
@@ -280,8 +280,8 @@ if [ ! -f config/config.ini ]; then
 fi
 
 if [ -f mod-list.json ]; then
-    echo "mod-list.json found, executing python mod downloader script"
-    if ! python3 ../download_mods.py; then
+    echo "mod-list.json found, executing mod downloader"
+    if ! "$ROOT_DIR/moddownloader"; then
         echo "Error: Failed to download mods"
         exit 1
     fi
