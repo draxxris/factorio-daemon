@@ -96,7 +96,7 @@ async function loadInstances() {
 }
 
 // Render instance list
-function renderInstanceList() {
+async function renderInstanceList() {
     instanceList.innerHTML = '';
     
     if (instances.length === 0) {
@@ -119,10 +119,56 @@ function renderInstanceList() {
                 <span>${inst.running ? 'Running' : 'Stopped'}</span>
                 ${inst.enabled ? '<span class="badge">Autostart</span>' : '<span class="badge disabled">No Autostart</span>'}
             </div>
+            <div class="server-info-mini" data-instance="${inst.name}">
+                <div class="info-item">
+                    <span class="info-label">Age:</span>
+                    <span class="info-value server-age">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Players:</span>
+                    <span class="info-value player-count">-</span>
+                </div>
+            </div>
         `;
         card.addEventListener('click', () => openInstanceModal(inst.name));
         instanceList.appendChild(card);
     });
+    
+    // Fetch server info for running instances
+    instances.forEach(inst => {
+        if (inst.running) {
+            fetchServerInfoForCard(inst.name);
+        }
+    });
+}
+
+async function fetchServerInfoForCard(name) {
+    const ageEl = document.querySelector(`[data-instance="${name}"] .server-age`);
+    const countEl = document.querySelector(`[data-instance="${name}"] .player-count`);
+    
+    if (!ageEl || !countEl) return;
+    
+    try {
+        const [timeData, playersData] = await Promise.all([
+            apiGet(`/api/instances/${name}/rcon/time`).catch(() => null),
+            apiGet(`/api/instances/${name}/rcon/players`).catch(() => null)
+        ]);
+        
+        if (timeData && timeData.time) {
+            ageEl.textContent = timeData.time;
+        } else {
+            ageEl.textContent = 'N/A';
+        }
+        
+        if (playersData && playersData.players) {
+            countEl.textContent = playersData.players.length;
+        } else {
+            countEl.textContent = '0';
+        }
+    } catch (error) {
+        ageEl.textContent = 'N/A';
+        countEl.textContent = '-';
+    }
 }
 
 // Open instance modal
@@ -150,6 +196,9 @@ async function openInstanceModal(name) {
     
     // Load backups
     await loadBackups();
+    
+    // Load RCON data (server time and players)
+    await loadRconData();
     
     // Show modal
     instanceModal.classList.remove('hidden');
@@ -196,8 +245,6 @@ function switchTab(tabName) {
     
     if (tabName === 'logs') {
         loadLogs();
-    } else if (tabName === 'rcon') {
-        loadRconData();
     }
 }
 
@@ -478,11 +525,8 @@ async function refreshCurrentInstance() {
         updateStatusDisplay();
         await loadInstances();
         
-        // Also refresh RCON data if RCON tab is active
-        const rconTab = document.getElementById('tab-rcon');
-        if (rconTab && rconTab.classList.contains('active')) {
-            await loadRconData();
-        }
+        // Refresh server info (server time and players)
+        await loadRconData();
     } catch (error) {
         console.error('Failed to refresh:', error);
     }
@@ -602,6 +646,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
+    // Close modals with ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (!instanceModal.classList.contains('hidden')) {
+                instanceModal.classList.add('hidden');
+                if (logStreamSource) {
+                    logStreamSource.close();
+                    logStreamSource = null;
+                }
+            }
+            if (!newInstanceModal.classList.contains('hidden')) {
+                newInstanceModal.classList.add('hidden');
+            }
+        }
+    });
+
     // Note: Click outside modal does NOT close it (per user request)
     
     // Tab switching
@@ -653,8 +713,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Backup
     document.getElementById('btn-backup').addEventListener('click', backupSave);
     
-    // RCON
-    document.getElementById('btn-refresh-rcon').addEventListener('click', loadRconData);
+    // Admin form
     document.getElementById('add-admin-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const playerName = document.getElementById('admin-player-name').value.trim();
