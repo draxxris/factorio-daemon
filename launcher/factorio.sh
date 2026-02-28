@@ -3,7 +3,7 @@
 # Factorio Headless Server Launcher
 # Reads configuration from an env file to download and run Factorio headless server
 
-set -e
+set -euo pipefail
 
 # Check for env file argument
 if [ -z "$1" ]; then
@@ -11,6 +11,8 @@ if [ -z "$1" ]; then
     echo "  <env_file> - Path to environment file containing NAME, VERSION, and optional TITLE variables"
     exit 1
 fi
+
+ROOT_DIR=$(dirname "${BASH_SOURCE[0]}")
 
 ENV_FILE="$1"
 shift  # Remove env file from arguments, remaining args will be passed to factorio
@@ -29,8 +31,10 @@ if [ ! -f "$CREDS_FILE" ]; then
 fi
 
 # Source the env files
-source "$ENV_FILE"
-source $CREDS_FILE
+# shellcheck source=/dev/null
+source "$ROOT_DIR/$ENV_FILE"
+# shellcheck source=/dev/null
+source "$ROOT_DIR/$CREDS_FILE"
 
 # Validate required variables
 if [ -z "$NAME" ]; then
@@ -51,6 +55,12 @@ fi
 # Set up the working directory (NAME is a subdirectory relative to script location)
 WORK_DIR="$(pwd)/$NAME"
 TEMPLATE_DIR="$(pwd)/launcher/templates"
+
+# Check if TEMPLATE_DIR exists
+if [ ! -d "$TEMPLATE_DIR" ]; then
+    echo "Error: Template directory '$TEMPLATE_DIR' not found"
+    exit 1
+fi
 
 if [ "$VERSION" = "latest" ]; then
     # For latest, we need to fetch the actual version number
@@ -95,7 +105,7 @@ if [ -d "$WORK_DIR" ]; then
             echo "Version matches - no download needed"
         else
             echo "Version differs - will re-download"
-            rm -rf "$WORK_DIR/bin" "$WORK_DIR/data" 2>/dev/null || true
+            rm -rf "${WORK_DIR:?}/bin" "${WORK_DIR:?}/data" 2>/dev/null || true
         fi
     else
         echo "No valid Factorio installation found, will download"
@@ -121,9 +131,7 @@ if [ ! -f "$WORK_DIR/bin/x64/factorio" ]; then
     TEMP_ARCHIVE="$WORK_DIR/factorio_download.tar.xz"
     
     # Try direct download (works if IP is whitelisted on factorio.com)
-    if curl -L -o "$TEMP_ARCHIVE" "$DOWNLOAD_URL" 2>&1 | tail -n 5; then
-        echo "Download complete"
-    else
+    if ! curl -L -o "$TEMP_ARCHIVE" "$DOWNLOAD_URL"; then
         echo "Error: Failed to download Factorio"
         echo "Note: You may need to:"
         echo "  1. Download manually from https://www.factorio.com/download"
@@ -132,12 +140,18 @@ if [ ! -f "$WORK_DIR/bin/x64/factorio" ]; then
         rm -f "$TEMP_ARCHIVE"
         exit 1
     fi
+    echo "Download complete"
     
     # Extract the archive to a temporary location
     echo "Extracting..."
     TEMP_EXTRACT="$WORK_DIR/_factorio_extract"
     mkdir -p "$TEMP_EXTRACT"
-    tar -xJf "$TEMP_ARCHIVE" -C "$TEMP_EXTRACT"
+    if ! tar -xJf "$TEMP_ARCHIVE" -C "$TEMP_EXTRACT"; then
+        echo "Error: Failed to extract archive"
+        rm -f "$TEMP_ARCHIVE"
+        rm -rf "$TEMP_EXTRACT"
+        exit 1
+    fi
     rm -f "$TEMP_ARCHIVE"
     
     # The archive includes a factorio/ directory at the root - strip it out
@@ -208,7 +222,7 @@ echo "Binary: $EXE"
 echo "Version: $INSTALLED_VERSION"
 echo "================================="
 
-cd $WORK_DIR
+cd "$WORK_DIR"
 
 # RCON Setup
 # Generate or load RCON credentials
@@ -244,13 +258,33 @@ echo "RCON Port: $RCON_PORT"
 echo "RCON Password: (stored in $RCON_PASSWD_FILE)"
 
 mkdir -p config
+
+# Check if PORT is set
+if [ -z "${PORT:-}" ]; then
+    echo "Error: PORT variable not set in env file"
+    exit 1
+fi
+
 echo "Setting PORT=$PORT"
-sed -e "s/PORT_REPLACE/$PORT/" \
-    $TEMPLATE_DIR/config.ini > config/config.ini
+awk -v port="$PORT" '
+    {
+        gsub(/\r/, "")
+        gsub(/PORT_REPLACE/, port)
+        print
+    }
+    ' "$TEMPLATE_DIR/config.ini" > config/config.ini
+
+if [ ! -f config/config.ini ]; then
+    echo "Error: Failed to create config/config.ini"
+    exit 1
+fi
 
 if [ -f mod-list.json ]; then
     echo "mod-list.json found, executing python mod downloader script"
-    python3.12 ../download_mods.py
+    if ! python3 ../download_mods.py; then
+        echo "Error: Failed to download mods"
+        exit 1
+    fi
 fi
 
 if [ -f mod-settings.dat ]; then
@@ -262,7 +296,7 @@ if [ -f main.zip ]; then
     mv main.zip saves/
 elif [ ! -f "$SAVE_FILE" ]; then
     echo "Save file not found, creating new world..."
-    $EXE --create $SAVE_FILE
+    "$EXE" --create "$SAVE_FILE"
 fi
 
 # Launch Factorio headless server

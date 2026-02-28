@@ -60,6 +60,6 @@ clean:
 # Run tests (shellcheck for scripts)
 test:
 	@echo "Running shellcheck on scripts..."
-	@command -v shellcheck >/dev/null 2>&1 || { echo "Error: shellcheck not installed. Install with: apt-get install shellcheck"; exit 1; }
+	@command -v shellcheck >/dev/null 2>&1 || { echo "Error: shellcheck not installed."; exit 1; }
 	@shellcheck factorio.sh && echo "✓ shellcheck passed" || { echo "✗ shellcheck failed"; exit 1; }
 	@echo "All tests passed!"
