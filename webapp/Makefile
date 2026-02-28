@@ -1,5 +1,5 @@
 BINARY_NAME=factorio-webapp
-BUILD_DIR=.
+BUILD_DIR=../build
 MAIN_PACKAGE=./cmd/server
 
 # Installation settings
@@ -26,7 +26,7 @@ clean:
 	rm -f $(BUILD_DIR)/$(BINARY_NAME)
 
 test:
-	$(GOTEST) -v ./...
+	$(GOTEST) -v -cover ./...
 
 # Install the webapp
 install: build

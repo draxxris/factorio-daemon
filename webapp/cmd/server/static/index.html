@@ -43,12 +43,37 @@
                             <button id="btn-disable" class="btn btn-secondary">Disable Autostart</button>
                         </div>
                         
+                        <!-- Server Info -->
+                        <div class="server-info">
+                            <div class="info-section">
+                                <h3>Server Time</h3>
+                                <div id="server-time" class="info-data">
+                                    <p class="loading-hint">Loading...</p>
+                                </div>
+                            </div>
+                            
+                            <div class="info-section">
+                                <h3>Players Online</h3>
+                                <div id="player-list" class="info-data">
+                                    <p class="loading-hint">Loading...</p>
+                                </div>
+                            </div>
+                            
+                            <div class="info-section">
+                                <h3>Add Admin</h3>
+                                <form id="add-admin-form" class="admin-form">
+                                    <input type="text" id="admin-player-name" placeholder="Player name" required>
+                                    <button type="submit" class="btn btn-primary">Add Admin</button>
+                                </form>
+                                <p id="admin-message" class="message hidden"></p>
+                            </div>
+                        </div>
+                        
                         <!-- Tabs -->
                         <div class="tabs">
                             <button class="tab-btn active" data-tab="files">Files</button>
                             <button class="tab-btn" data-tab="logs">Logs</button>
                             <button class="tab-btn" data-tab="backups">Backups</button>
-                            <button class="tab-btn" data-tab="rcon">RCON</button>
                         </div>
                         
                         <!-- Files Tab -->
@@ -92,39 +117,6 @@
                             <h3>Backup History</h3>
                             <div id="backup-list" class="backup-list">
                                 <p class="empty-hint">No backups</p>
-                            </div>
-                        </div>
-                        
-                        <!-- RCON Tab -->
-                        <div id="tab-rcon" class="tab-content">
-                            <div class="rcon-controls">
-                                <button id="btn-refresh-rcon" class="btn btn-secondary">Refresh</button>
-                            </div>
-                            
-                            <!-- Server Time -->
-                            <div class="rcon-section">
-                                <h3>Server Time</h3>
-                                <div id="server-time" class="rcon-data">
-                                    <p class="loading-hint">Loading...</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Player List -->
-                            <div class="rcon-section">
-                                <h3>Player List</h3>
-                                <div id="player-list" class="rcon-data">
-                                    <p class="loading-hint">Loading...</p>
-                                </div>
-                            </div>
-                            
-                            <!-- Add Admin -->
-                            <div class="rcon-section">
-                                <h3>Add Admin</h3>
-                                <form id="add-admin-form" class="admin-form">
-                                    <input type="text" id="admin-player-name" placeholder="Player name" required>
-                                    <button type="submit" class="btn btn-primary">Add Admin</button>
-                                </form>
-                                <p id="admin-message" class="message hidden"></p>
                             </div>
                         </div>
                     </div>
