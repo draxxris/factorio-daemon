@@ -2,7 +2,7 @@
 # This file is a template - variables will be substituted during setup
 
 server {
-    listen 80;
+    listen 8090;
     server_name _;
 
     # Maximum upload size for save files and mods

@@ -27,16 +27,15 @@ A complete solution for running and managing multiple Factorio headless server i
 ### Prerequisites
 
 - Linux system with systemd
-- Factorio account credentials (for mod downloads and public server visibility)
-- Python 3.12+ (for mod downloader)
-- Go 1.21+ (for building the webapp)
+- Factorio.com account credentials (for mod downloads and public server visibility)
+- Go 1.21+ (for building the webapp and moddownloader)
 - Root access for initial installation only (services run as non-root user)
 
 ### Launcher Installation
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/draxxris/factorio-daemon
    cd factorio-daemon
    ```
 
@@ -55,23 +54,13 @@ A complete solution for running and managing multiple Factorio headless server i
    ```bash
    cd /opt/factorio
    # Create .env with your Factorio credentials
-   echo 'FACTORIO_USERNAME=your_username' | sudo tee .env
-   echo 'FACTORIO_TOKEN=your_token' | sudo tee -a .env
+   echo 'export FACTORIO_USERNAME=your_username' | sudo tee .env
+   echo 'export FACTORIO_TOKEN=your_token' | sudo tee -a .env
    sudo chown factorio:factorio .env
    sudo chmod 640 .env
    ```
 
-5. **Install Sudoers rule** (required for webapp to manage services):
-    ```bash
-    cd webapp
-    sudo make install-sudoers
-    ```
-
-    This allows the `factorio` user to run systemctl and journalctl commands for `factorio@*` services without requiring a password.
-
-    **Security Note**: This grants the `factorio` user passwordless access to manage Factorio services. Only install if you trust the webapp application.
-
-6. **Create an instance**:
+5. **Create an instance**:
    ```bash
    # Copy the example environment file
    sudo cp env-example env-myserver
@@ -92,7 +81,7 @@ A complete solution for running and managing multiple Factorio headless server i
    NON_BLOCKING_SAVE=true
    ```
 
-7. **Start your instance**:
+6. **Start your instance**:
    ```bash
    sudo systemctl daemon-reload
    sudo systemctl start factorio@myserver
@@ -104,7 +93,7 @@ A complete solution for running and managing multiple Factorio headless server i
 ```bash
 cd webapp
 make build
-sudo make install
+sudo make install install-sudoers
 sudo systemctl daemon-reload
 sudo systemctl enable --now factorio-webapp
 ```
@@ -130,7 +119,7 @@ This setup:
 - Sets a 100MB upload limit for save files and mods
 - Configures proper timeouts for long-running operations
 
-After setup, access the webapp at `http://your-server/` (port 80) instead of port 8080.
+After setup, access the webapp at `http://your-server:8090/` instead of port 8080.
 
 **Prerequisites**:
 - nginx must be installed
@@ -155,7 +144,7 @@ The easiest way to set up a modpack is to use the Factorio client:
 
 ### Managing Instances via Webapp
 
-1. Open http://localhost:8080 in your browser
+1. Open http://your-server:8090/ in your browser
 2. Click on an instance card to manage it
 3. Upload files via drag-and-drop or click
 4. Stop the instance before deploying files
