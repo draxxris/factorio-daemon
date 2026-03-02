@@ -23,6 +23,9 @@ moddownloader:
 # Install the launcher
 install: moddownloader
 	@echo "Installing factorio launcher to $(PREFIX)..."
+	@echo "Creating factorio system user..."
+	@id factorio >/dev/null 2>&1 || \
+		useradd --system --home-dir $(PREFIX) --shell /usr/sbin/nologin factorio
 	install -d $(PREFIX)
 	install -d $(PREFIX)/templates
 	install -m 755 $(SCRIPTS) $(PREFIX)/
@@ -30,18 +33,29 @@ install: moddownloader
 	install -m 644 $(TEMPLATES) $(PREFIX)/templates/
 	install -m 644 $(EXAMPLE_ENV) $(PREFIX)/
 	install -m 644 factorio@.service $(SERVICE_FILE)
+	@echo "Setting ownership and permissions..."
+	chown -R factorio:factorio $(PREFIX)
+	chmod 750 $(PREFIX)
 	@echo "Installation complete!"
 	@echo ""
 	@echo "Next steps:"
 	@echo "1. Create a .env file with your Factorio credentials:"
 	@echo "   echo 'FACTORIO_USERNAME=your_username' > $(PREFIX)/.env"
 	@echo "   echo 'FACTORIO_TOKEN=your_token' >> $(PREFIX)/.env"
+	@echo "   sudo chown factorio:factorio $(PREFIX)/.env"
+	@echo "   sudo chmod 640 $(PREFIX)/.env"
 	@echo ""
 	@echo "2. Create an instance configuration:"
 	@echo "   cp $(PREFIX)/env-example $(PREFIX)/env-myserver"
-	@echo "   nano $(PREFIX)/env-myserver"
+	@echo "   sudo nano $(PREFIX)/env-myserver"
+	@echo "   sudo chown factorio:factorio $(PREFIX)/env-myserver"
+	@echo "   sudo chmod 640 $(PREFIX)/env-myserver"
 	@echo ""
-	@echo "3. Reload systemd and start your instance:"
+	@echo "3. Install Polkit rule for webapp service management:"
+	@echo "   sudo install -d /etc/polkit-1/rules.d"
+	@echo "   sudo install -m 644 ../polkit/50-factorio-webapp.rules /etc/polkit-1/rules.d/"
+	@echo ""
+	@echo "4. Reload systemd and start your instance:"
 	@echo "   sudo systemctl daemon-reload"
 	@echo "   sudo systemctl start factorio@myserver"
 	@echo "   sudo systemctl enable factorio@myserver"

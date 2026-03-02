@@ -30,7 +30,7 @@ A complete solution for running and managing multiple Factorio headless server i
 - Factorio account credentials (for mod downloads and public server visibility)
 - Python 3.12+ (for mod downloader)
 - Go 1.21+ (for building the webapp)
-- Root access for installation
+- Root access for initial installation only (services run as non-root user)
 
 ### Launcher Installation
 
@@ -45,22 +45,37 @@ A complete solution for running and managing multiple Factorio headless server i
    cd launcher
    sudo make install
    ```
+   
+   This will:
+   - Create a system user `factorio` with home directory `/opt/factorio`
+   - Install the launcher scripts and templates
+   - Set proper ownership and permissions
 
-3. **Configure credentials**:
+3. **Install Polkit rule** (required for webapp to manage services):
+   ```bash
+   cd ../polkit
+   sudo make install
+   ```
+
+4. **Configure credentials**:
    ```bash
    cd /opt/factorio
    # Create .env with your Factorio credentials
-   echo 'FACTORIO_USERNAME=your_username' > .env
-   echo 'FACTORIO_TOKEN=your_token' >> .env
+   echo 'FACTORIO_USERNAME=your_username' | sudo tee .env
+   echo 'FACTORIO_TOKEN=your_token' | sudo tee -a .env
+   sudo chown factorio:factorio .env
+   sudo chmod 640 .env
    ```
 
-4. **Create an instance**:
+5. **Create an instance**:
    ```bash
    # Copy the example environment file
-   cp env-example env-myserver
+   sudo cp env-example env-myserver
    
    # Edit the instance configuration
-   vi env-myserver
+   sudo vi env-myserver
+   sudo chown factorio:factorio env-myserver
+   sudo chmod 640 env-myserver
    ```
 
    Instance configuration (`env-myserver`):
@@ -73,7 +88,7 @@ A complete solution for running and managing multiple Factorio headless server i
    NON_BLOCKING_SAVE=true
    ```
 
-5. **Start your instance**:
+6. **Start your instance**:
    ```bash
    sudo systemctl daemon-reload
    sudo systemctl start factorio@myserver
@@ -91,6 +106,37 @@ sudo systemctl enable --now factorio-webapp
 ```
 
 Access the webapp at `http://your-server:8080`
+
+**Note**: All services run as the `factorio` user for security. The webapp uses Polkit to manage `factorio@*` systemd services without requiring root privileges.
+
+### Optional: Nginx Reverse Proxy with Authentication
+
+For production use, it's recommended to run nginx as a reverse proxy with basic authentication:
+
+```bash
+cd webapp
+sudo make nginx-setup
+```
+
+You will be prompted to enter a username and password for accessing the webapp.
+
+This setup:
+- Configures nginx as a reverse proxy to the webapp
+- Enables basic HTTP authentication
+- Sets a 100MB upload limit for save files and mods
+- Configures proper timeouts for long-running operations
+
+After setup, access the webapp at `http://your-server/` (port 80) instead of port 8080.
+
+**Prerequisites**:
+- nginx must be installed
+- `htpasswd` tool required (install `apache2-utils` on Debian/Ubuntu or `httpd-tools` on RHEL/CentOS)
+
+To remove the nginx configuration:
+```bash
+sudo rm /etc/nginx/conf.d/factorio.conf /etc/nginx/.htpasswd-factorio
+sudo systemctl reload nginx
+```
 
 ## Usage
 
@@ -153,6 +199,8 @@ sudo systemctl disable factorio@myserver
 # View logs
 sudo journalctl -u factorio@myserver -f
 ```
+
+**Note**: Services run as the `factorio` user. Use `sudo` for systemctl commands as they require root to manage systemd services.
 
 ## Configuration
 

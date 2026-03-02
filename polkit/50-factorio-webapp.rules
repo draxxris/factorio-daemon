@@ -1,0 +1,15 @@
+// Polkit rule to allow factorio user to manage factorio@ services
+// This allows the webapp to start, stop, restart, enable, and disable factorio instances
+//
+// Installation: sudo install -m 644 50-factorio-webapp.rules /etc/polkit-1/rules.d/
+// After installation, reload polkit: sudo systemctl reload polkit
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.systemd1.manage-units" &&
+        subject.user == "factorio") {
+        var unit = action.lookup("unit");
+        if (unit && unit.match(/^factorio@/)) {
+            return polkit.Result.YES;
+        }
+    }
+});

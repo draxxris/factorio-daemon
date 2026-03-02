@@ -3,6 +3,8 @@ Description=Factorio Server Manager Webapp
 After=network.target
 
 [Service]
+User=factorio
+Group=factorio
 Type=simple
 WorkingDirectory=/opt/factorio/webapp
 ExecStart=/opt/factorio/webapp/factorio-webapp

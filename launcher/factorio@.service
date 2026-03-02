@@ -2,6 +2,8 @@
 Description=Factorio Server %i
 
 [Service]
+User=factorio
+Group=factorio
 WorkingDirectory=/opt/factorio
 Type=simple
 SyslogIdentifier=factorio-%i
