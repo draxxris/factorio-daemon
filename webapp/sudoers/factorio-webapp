@@ -1,0 +1,18 @@
+# Sudoers configuration for Factorio Webapp
+# This allows the factorio user to manage factorio@ systemd services
+# without requiring a password.
+#
+# Installation: sudo install -m 440 factorio-webapp /etc/sudoers.d/
+# After installation, verify with: sudo visudo -c /etc/sudoers.d/factorio-webapp
+
+# Allow factorio user to run systemctl commands for factorio@ services
+factorio ALL=(ALL) NOPASSWD: /bin/systemctl start factorio@*
+factorio ALL=(ALL) NOPASSWD: /bin/systemctl stop factorio@*
+factorio ALL=(ALL) NOPASSWD: /bin/systemctl restart factorio@*
+factorio ALL=(ALL) NOPASSWD: /bin/systemctl enable factorio@*
+factorio ALL=(ALL) NOPASSWD: /bin/systemctl disable factorio@*
+factorio ALL=(ALL) NOPASSWD: /bin/systemctl is-active factorio@*
+factorio ALL=(ALL) NOPASSWD: /bin/systemctl is-enabled factorio@*
+
+# Allow factorio user to read journalctl logs for factorio@ services
+factorio ALL=(ALL) NOPASSWD: /bin/journalctl -u factorio@*

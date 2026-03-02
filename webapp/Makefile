@@ -7,6 +7,10 @@ PREFIX=/opt/factorio
 INSTALL_DIR=$(PREFIX)/webapp
 SERVICE_FILE=/etc/systemd/system/factorio-webapp.service
 
+# Sudoers settings
+SUDOERS_DIR=/etc/sudoers.d
+SUDOERS_RULE_FILE=sudoers/factorio-webapp
+
 # Remote deployment settings
 #REMOTE_HOST=deploy@192.168.1.30
 #REMOTE_PATH=/opt/factorio/
@@ -104,4 +108,28 @@ nginx-setup:
 	echo ""; \
 	echo "To remove this configuration later, run: sudo rm /etc/nginx/conf.d/factorio.conf /etc/nginx/.htpasswd-factorio && sudo systemctl reload nginx"
 
-.PHONY: build clean test deploy deps run install nginx-setup
+.PHONY: build clean test deploy deps run install nginx-setup install-sudoers uninstall-sudoers
+
+# Install sudoers rule for factorio user
+install-sudoers:
+	@echo "Installing sudoers rule to $(SUDOERS_DIR)..."
+	@echo "WARNING: This allows the factorio user to manage factorio@ services without password."
+	@echo "         Only install if you trust the factorio user and webapp."
+	@echo ""
+	install -d $(SUDOERS_DIR)
+	install -m 440 $(SUDOERS_RULE_FILE) $(SUDOERS_DIR)/
+	@echo "Verifying sudoers configuration..."
+	@visudo -c $(SUDOERS_DIR)/factorio-webapp || { \
+		echo "Error: sudoers configuration is invalid!"; \
+		rm -f $(SUDOERS_DIR)/factorio-webapp; \
+		exit 1; \
+	}
+	@echo "Sudoers rule installed successfully!"
+	@echo ""
+	@echo "The factorio user can now manage factorio@ services without password."
+
+# Uninstall sudoers rule
+uninstall-sudoers:
+	@echo "Removing sudoers rule from $(SUDOERS_DIR)..."
+	rm -f $(SUDOERS_DIR)/factorio-webapp
+	@echo "Sudoers rule removed successfully!"

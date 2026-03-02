@@ -51,12 +51,6 @@ A complete solution for running and managing multiple Factorio headless server i
    - Install the launcher scripts and templates
    - Set proper ownership and permissions
 
-3. **Install Polkit rule** (required for webapp to manage services):
-   ```bash
-   cd ../polkit
-   sudo make install
-   ```
-
 4. **Configure credentials**:
    ```bash
    cd /opt/factorio
@@ -67,7 +61,17 @@ A complete solution for running and managing multiple Factorio headless server i
    sudo chmod 640 .env
    ```
 
-5. **Create an instance**:
+5. **Install Sudoers rule** (required for webapp to manage services):
+    ```bash
+    cd webapp
+    sudo make install-sudoers
+    ```
+
+    This allows the `factorio` user to run systemctl and journalctl commands for `factorio@*` services without requiring a password.
+
+    **Security Note**: This grants the `factorio` user passwordless access to manage Factorio services. Only install if you trust the webapp application.
+
+6. **Create an instance**:
    ```bash
    # Copy the example environment file
    sudo cp env-example env-myserver
@@ -88,7 +92,7 @@ A complete solution for running and managing multiple Factorio headless server i
    NON_BLOCKING_SAVE=true
    ```
 
-6. **Start your instance**:
+7. **Start your instance**:
    ```bash
    sudo systemctl daemon-reload
    sudo systemctl start factorio@myserver
@@ -107,7 +111,7 @@ sudo systemctl enable --now factorio-webapp
 
 Access the webapp at `http://your-server:8080`
 
-**Note**: All services run as the `factorio` user for security. The webapp uses Polkit to manage `factorio@*` systemd services without requiring root privileges.
+**Note**: All services run as the `factorio` user for security. The webapp uses sudo to manage `factorio@*` systemd services without requiring a password.
 
 ### Optional: Nginx Reverse Proxy with Authentication
 

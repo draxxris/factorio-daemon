@@ -26,11 +26,11 @@ install: moddownloader
 	@echo "Creating factorio system user..."
 	@id factorio >/dev/null 2>&1 || \
 		useradd --system --home-dir $(PREFIX) --shell /usr/sbin/nologin factorio
-	install -d $(PREFIX)
-	install -d $(PREFIX)/templates
-	install -m 755 $(SCRIPTS) $(PREFIX)/
-	install -m 755 ../build/moddownloader $(PREFIX)/
-	install -m 644 $(TEMPLATES) $(PREFIX)/templates/
+	install -d $(PREFIX)/launcher
+	install -d $(PREFIX)/launcher/templates
+	install -m 755 $(SCRIPTS) $(PREFIX)/launcher/
+	install -m 755 ../build/moddownloader $(PREFIX)/launcher/
+	install -m 644 $(TEMPLATES) $(PREFIX)/launcher/templates/
 	install -m 644 $(EXAMPLE_ENV) $(PREFIX)/
 	install -m 644 factorio@.service $(SERVICE_FILE)
 	@echo "Setting ownership and permissions..."
@@ -51,11 +51,7 @@ install: moddownloader
 	@echo "   sudo chown factorio:factorio $(PREFIX)/env-myserver"
 	@echo "   sudo chmod 640 $(PREFIX)/env-myserver"
 	@echo ""
-	@echo "3. Install Polkit rule for webapp service management:"
-	@echo "   sudo install -d /etc/polkit-1/rules.d"
-	@echo "   sudo install -m 644 ../polkit/50-factorio-webapp.rules /etc/polkit-1/rules.d/"
-	@echo ""
-	@echo "4. Reload systemd and start your instance:"
+	@echo "3. Reload systemd and start your instance:"
 	@echo "   sudo systemctl daemon-reload"
 	@echo "   sudo systemctl start factorio@myserver"
 	@echo "   sudo systemctl enable factorio@myserver"

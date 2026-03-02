@@ -232,7 +232,15 @@ RCON_PASSWD_FILE="rcon-passwd"
 # Function to generate random alphanumeric string (16+ characters)
 generate_random_password() {
     local length=${1:-16}
-    tr -dc 'A-Za-z0-9' < /dev/urandom | head -c "$length"
+    local chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    local char_count=${#chars}
+    local password=''
+    
+    for i in $(seq 1 "$length"); do
+        password="${password}${chars:$((RANDOM % char_count)):1}"
+    done
+    
+    echo "$password"
 }
 
 # Function to generate random port between 20000-30000
